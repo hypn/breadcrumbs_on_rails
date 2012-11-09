@@ -55,6 +55,17 @@ module BreadcrumbsOnRails
           end
         end
 
+        def truncated_name(element)
+          name = compute_name(element)
+          if @options[:truncate_length].present?
+            truncate_with = (@options[:truncate_with].present?) ? @options[:truncate_with].to_s : '...'
+            if (name.length > (@options[:truncate_length].to_i + truncate_with.length))
+              name = name[0,@options[:truncate_length].to_i] + truncate_with
+            end
+          end
+          name
+        end
+
         def compute_path(element)
           case path = element.path
           when Symbol
@@ -88,9 +99,12 @@ module BreadcrumbsOnRails
 
       def render_element(element)
         if element.path == nil
-          content = compute_name(element)
+          content = truncated_name(element)
         else
-          content = @context.link_to_unless_current(compute_name(element), compute_path(element), element.options)
+          full_name = compute_name(element)
+          trunc_name = truncated_name(element)
+          element.options['title'] = full_name unless trunc_name == full_name
+          content = @context.link_to_unless_current(trunc_name, compute_path(element), element.options)
         end
         if @options[:tag]
           @context.content_tag(@options[:tag], content)
